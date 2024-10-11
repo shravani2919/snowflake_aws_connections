@@ -1,0 +1,120 @@
+/ just creates the stage and loaded data from aws on the create stage  now we are transforming the data
+
+// i want just column one and two from the oreders table from our_first db data base for that i am createing a table to copy the two columns
+
+CREATE OR REPLACE TABLE OUR_FIRST_DB.PUBLIC.ORDERS_new (
+        ORDER_ID VARCHAR(30),
+        AMOUNT INT);
+
+// table is created i am uploading the two columns data into new table fromaws stage table to ORDERS_new
+
+
+
+COPY INTO OUR_FIRST_DB.PUBLIC.ORDERS_NEW (order_id, amount)
+FROM @MANAGE_DB.EXTERNAL_STAGES.AWS_STAGE
+FILE_FORMAT = (TYPE = CSV FIELD_DELIMITER = ',' SKIP_HEADER = 1)
+FILES = ('OrderDetails.csv')
+ON_ERROR = 'CONTINUE';
+
+
+select * from  OUR_FIRST_DB.PUBLIC.ORDERS_NEW;
+-------------------------------------------------------------------------------------------------------------------------------------
+
+CREATE OR REPLACE TABLE OUR_FIRST_DB.PUBLIC.ORDERS_new (
+        ORDER_ID VARCHAR(30),
+        AMOUNT INT, 
+        PROFIT INT,
+        profitable_flag VARCHAR(30));
+
+// now we are using few conditions
+
+USE DATABASE MANAGE_DB;
+
+COPY INTO OUR_FIRST_DB.PUBLIC.ORDERS_NEW (ORDER_ID, AMOUNT, PROFIT)
+FROM @MANAGE_DB.EXTERNAL_STAGES.AWS_STAGE
+FILE_FORMAT = (TYPE = CSV FIELD_DELIMITER = ',' SKIP_HEADER = 1)
+PATTERN = '.*Order.*';
+
+
+INSERT INTO OUR_FIRST_DB.PUBLIC.ORDERS_NEW (order_id, amount, profit, profitable_flag)
+SELECT 
+    order_id, 
+    AMOUNT, 
+    CAST(PROFIT AS INT),
+    CASE 
+        WHEN CAST(PROFIT AS INT) < 0 THEN 'NOT PROFITABLE'
+        ELSE 'PROFITABLE'
+    END AS PROFITABLE_FLAG
+FROM @MANAGE_DB.EXTERNAL_STAGES.AWS_STAGE;
+
+
+
+SELECT  * FROM OUR_FIRST_DB.PUBLIC.ORDERS_NEW;
+
+// thee above commands are not working need to work on them
+-----------------------------------------------------------------------------------------
+
+//auto increment id
+
+copy into OUR_FIRST_DB.PUBLIC.ORDERS_NEW(profit, amount)
+  from(profit, amount from 
+ @MANAGE_DB.EXTERNAL_STAGES.AWS_STAGE)
+file_format = (type = csv field_delimiter = ',' skip_header = 1)
+pattern='.*Order.*';
+
+
+
+COPY INTO OUR_FIRST_DB.PUBLIC.ORDERS_NEW (profit, amount)
+FROM @MANAGE_DB.EXTERNAL_STAGES.AWS_STAGE
+FILE_FORMAT = (type = csv field_delimiter = ',' skip_header = 1)
+FILES = ('OrderDetails.csv')
+ON_ERROR = 'CONTINUE';
+
+select * from OUR_FIRST_DB.PUBLIC.ORDERS_NEW;
+
+
+
+--------------------------------------------------------------------
+
+CREATE OR REPLACE TABLE OUR_FIRST_DB.PUBLIC.ORDERS_NEW1(
+       ORDER_ID VARCHAR(30),
+        AMOUNT INT,
+        PROFIT INT,
+        QUANTITY INT,
+        CATEGORY VARCHAR(30),
+        SUBCATEGORY VARCHAR(30)
+);
+
+COPY INTO  OUR_FIRST_DB.PUBLIC.ORDERS_NEW1
+ FROM @MANAGE_DB.EXTERNAL_STAGES.AWS_STAGE
+
+FILE_FORMAT = (type = csv field_delimiter = ',' skip_header = 1)
+FILES = ('OrderDetails.csv')
+
+
+    // validating table is empty
+select * from OUR_FIRST_DB.PUBLIC.ORDERS_NEW1
+
+//truncate the table
+
+truncate table OUR_FIRST_DB.PUBLIC.ORDERS_NEW1
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
